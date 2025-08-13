@@ -18,18 +18,24 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] !=attrs['password2']:
             raise serializers.ValidationError({"password": "Passwords don't match."})
+        
+        # Prevent self-assigning admin role
+        if attrs.get('role') == 'admin':
+            raise serializers.ValidationError({"role": "You cannot register directly as admin."})
+        
         return attrs
     
     def create(self, validated_data):
         validated_data.pop('password2')
-        user = User.objects.create (
+        role = validated_data.get('role', 'student')
+        user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
-            role=validated_data.get('role', 'student')
+            password=validated_data['password'],
+            role=role
         )
-        user.set_password(validated_data['password'])
-        user.save()
         return user
+
 
         
         
