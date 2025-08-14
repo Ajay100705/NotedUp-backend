@@ -5,7 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id','username','email','role']
+        fields = ['id', 'username', 'email', 'role', 'is_active']
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
@@ -13,29 +13,29 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2', 'role']
+        fields = ['username', 'email', 'password', 'password2']
 
     def validate(self, attrs):
-        if attrs['password'] !=attrs['password2']:
+        if attrs['password'] != attrs['password2']:
             raise serializers.ValidationError({"password": "Passwords don't match."})
-        
-        # Prevent self-assigning admin role
-        if attrs.get('role') == 'admin':
-            raise serializers.ValidationError({"role": "You cannot register directly as admin."})
-        
         return attrs
-    
+
     def create(self, validated_data):
         validated_data.pop('password2')
-        role = validated_data.get('role', 'student')
-        user = User.objects.create_user(
+        return User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password'],
-            role=role
+            role='student',
+            is_active=False  # Require email verification
         )
-        return user
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True, validators=[validate_password])
 
-        
-        
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
