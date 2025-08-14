@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    UploadNoteView, ListNotesView, DomainListView, 
+    UploadNoteView, ListNotesView, DomainListView,
     BranchListView, YearListView, SubjectListView
 )
 
